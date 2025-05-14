@@ -1,0 +1,307 @@
+CREATE DATABASE Samsung_DB;
+
+USE Samsung_DB;
+
+SELECT *
+FROM 
+	clients_samsung;
+
+SELECT *
+FROM 
+	produits_samsung;
+
+SELECT *
+FROM 
+	ventes_samsung;
+
+
+/****exercice 1 : sélection de clients basée sur des critères multiples****/
+
+SELECT
+	Age,
+	Revenu_Annuel,
+	Date_Inscription,
+	ROUND(Score_Fidelite)
+FROM 
+	clients_samsung
+WHERE
+	Age >= 30 
+	AND Revenu_Annuel BETWEEN 40000 AND 70000
+	AND Date_Inscription > '2018-01-01'
+	AND Score_Fidelite > 5; 
+
+
+/****exercice 2 : analyse des ventes avec multiples conditions ****/
+
+SELECT
+	Montant_Total,
+	ROUND(Score_Satisfaction),
+	Canal_Achat,
+	Delai_Livraison_Jours
+FROM 
+	ventes_samsung
+WHERE
+	Montant_Total > 1000
+	AND Score_Satisfaction < 3
+	AND Canal_Achat = 'en ligne'
+	AND Delai_Livraison_Jours > 20;
+
+
+/****exercice 3 : diversité des pays de vente****/
+
+SELECT DISTINCT 
+	Pays_Vente
+FROM 
+	ventes_samsung;
+
+/****exercice 4 : analyse des canaux de vente et satisfaction des clients****/
+
+SELECT DISTINCT Canal_Achat,
+    ROUND(AVG(Score_Satisfaction),2) AS moyenne_de_satisfaction,
+    COUNT(Quantite_Vendue) AS nombre_total_vente
+FROM 
+	ventes_samsung
+GROUP BY
+	Canal_Achat
+ORDER BY
+	nombre_total_vente DESC;
+    
+/****exercice 5 : produits et leur popularité****/   
+    
+SELECT DISTINCT produits_samsung.Nom_Produit,
+	produits_samsung.Prix,
+    SUM(ventes_samsung.Quantite_Vendue) AS total_quantité_vendue
+FROM 
+	produits_samsung
+LEFT JOIN ventes_samsung ON produits_samsung.ID_Produit = ventes_samsung.ID_Produit
+GROUP BY 
+	produits_samsung.Nom_Produit,
+	produits_samsung.Prix;
+	
+
+/****exercice 6 : profilage des clients****/  
+
+SELECT DISTINCT  Pays,
+	ROUND(AVG(Age)) AS age_moyen_clients,
+    MAX(Revenu_Annuel) AS revenu_max_clients
+FROM 
+	clients_samsung
+GROUP BY
+	Pays;
+    
+/****exercice 7 : analyse des méthodes d'expédition****/     
+    
+SELECT DISTINCT Methode_Expedition,
+	ROUND(AVG(Delai_Livraison_Jours)) AS temps_moyen_de_livraison,
+    ROUND(AVG(Score_Satisfaction),2) AS moyenne_satisfaction
+FROM 
+	ventes_samsung
+GROUP BY
+	Methode_Expedition;
+	
+/****exercice 8 : analyse de la fidélité des clients****/      
+ 
+SELECT
+	COUNT(Score_Fidelite) AS nombre_clients,
+    CASE
+		WHEN Score_Fidelite <5 THEN 'faible'
+        WHEN Score_Fidelite BETWEEN 5 AND 7 THEN 'moyen'
+        ELSE 'eleve'
+	END AS categorie_fidelite
+FROM
+	clients_samsung
+GROUP BY
+	categorie_fidelite;
+	
+    
+/****exercice 9 : analyse des produits populaires****/  
+
+SELECT DISTINCT produits_samsung.ID_Produit,
+    SUM(ventes_samsung.Montant_Total) AS montant_total_ventes
+FROM 
+	produits_samsung
+LEFT JOIN ventes_samsung ON produits_samsung.ID_Produit = ventes_samsung.ID_Produit
+GROUP BY 
+	produits_samsung.ID_Produit
+HAVING
+	montant_total_ventes > 15000
+ORDER BY
+	montant_total_ventes DESC;
+ 
+/****exercice 10 : identification des pays à forte activité commerciale****/ 
+ 
+ 
+SELECT DISTINCT Pays_Vente,
+	COUNT(Quantite_Vendue) AS nombre_total_vente
+FROM 
+	ventes_samsung
+GROUP BY 
+	Pays_Vente
+HAVING nombre_total_vente > 400;
+ 
+/****exercice 11 : analyse des ventes par mois****/  
+ 
+SELECT
+	DATE_FORMAT(Date_Vente,'%M') AS mois_de_vente_2021,
+    MONTH(Date_Vente) AS numero_du_mois,
+	SUM(Montant_Total) AS total_ventes
+FROM
+	ventes_samsung
+WHERE YEAR(Date_Vente) = 2021
+GROUP BY 
+	mois_de_vente_2021, numero_du_mois
+ORDER BY
+	numero_du_mois;
+ 
+
+/****exercice 12 : classification des ventes par jour de la semaine****/  
+ 
+ SELECT 
+	COUNT(Quantite_Vendue) AS nombre_total_vente,
+	CASE
+		WHEN  DAYOFWEEK(Date_Vente) BETWEEN 2 AND 6 THEN 'semaine'
+        ELSE 'weekend'
+	END AS jours_de_la_semaine
+FROM 
+	ventes_samsung
+GROUP BY  
+	jours_de_la_semaine;
+
+/****exercice 13 : catégorisation des ventes par période de l'année****/  
+
+
+SELECT
+	SUM(Montant_Total) AS montant_total_ventes,
+    CASE
+		WHEN MONTH(Date_Vente) < 5 THEN "debut d'annee"
+        WHEN MONTH(Date_Vente) BETWEEN 5 AND 8 THEN "milieu d'annee"
+		ELSE "fin d'annee"
+	END AS periode_de_vente
+FROM
+	ventes_samsung
+GROUP BY 
+	periode_de_vente
+ORDER BY
+	periode_de_vente ASC;
+    
+/****exercice 14 : clients fidèles dans des pays spécifiques****/ 
+
+SELECT
+	ID_Client,
+    Pays,
+    Score_Fidelite
+FROM
+    clients_samsung
+WHERE
+    Score_Fidelite > 7
+	AND (Pays = 'France' OR Pays = 'Allemagne');
+    
+/****exercice 15 : catégorisation des clients selon leur revenu et leur âge****/  
+
+ SELECT
+	Revenu_Annuel,
+	Age,
+	CASE
+		WHEN Age < 35 AND Revenu_Annuel > 50000 THEN "jeune à revenu élevé"
+        WHEN Age < 35 AND Revenu_Annuel BETWEEN 30000 AND 50000 THEN "jeune à revenu moyen"
+        WHEN Age < 35 AND Revenu_Annuel < 30000 THEN "jeune à revenu faible"
+		WHEN Age >= 35 AND Revenu_Annuel > 50000 THEN "sénior à revenu élevé"
+		WHEN Age >= 35 AND Revenu_Annuel BETWEEN 30000 AND 50000 THEN "sénior à revenu moyen"
+		WHEN Age >= 35 AND Revenu_Annuel < 30000 THEN "sénior à revenu faible"
+        ELSE 'error'
+	END AS segment_client
+FROM
+	clients_samsung
+ORDER BY
+	 segment_client;
+    
+/****exercice 16 : tendances des ventes par mois****/    
+    
+SELECT
+	SUM(Quantite_Vendue) AS Volume_total_ventes,
+    DATE_FORMAT(Date_Vente,'%M') AS mois_de_vente,
+    MONTH(Date_Vente) AS numero_du_mois
+FROM
+	ventes_samsung
+GROUP BY 
+	mois_de_vente,numero_du_mois
+ORDER BY
+numero_du_mois;
+
+/****exercice 17 : analyse ccroisée des produits par gamme et pays de vente****/
+
+SELECT
+	ventes_samsung.Pays_Vente,
+	produits_samsung.Gamme,
+	COUNT(ventes_samsung.Quantite_Vendue) AS nombre_de_ventes,
+	SUM(ventes_samsung.Montant_Total) AS montant_total_ventes
+FROM
+	ventes_samsung
+LEFT JOIN produits_samsung ON  ventes_samsung.ID_Produit = produits_samsung.ID_Produit
+GROUP BY
+	ventes_samsung.Pays_Vente,
+	produits_samsung.Gamme
+ORDER BY
+	ventes_samsung.Pays_Vente ASC;
+
+/****exercice 18 : analyse croisée multi-dimensionnelle des performances produits****/
+
+SELECT
+	produits_samsung.Gamme,
+    ventes_samsung.Canal_Achat,
+    COUNT(ventes_samsung.Quantite_Vendue) AS nombre_de_ventes,
+    SUM(ventes_samsung.Quantite_Vendue) AS quantite_totale_vendue,
+    SUM(ventes_samsung.Montant_Total) AS montant_total_ventes,
+    ROUND(AVG(ventes_samsung.Score_Satisfaction),2) AS moyenne_satisfaction
+FROM 
+	ventes_samsung
+LEFT JOIN produits_samsung ON  ventes_samsung.ID_Produit = produits_samsung.ID_Produit
+GROUP BY 
+	ventes_samsung.Canal_Achat,
+	produits_samsung.Gamme
+ORDER BY
+	produits_samsung.Gamme ASC;
+
+/****exercice 19 : évolution des ventes mensuelles selon les gammes de produits****/
+
+SELECT
+	produits_samsung.Gamme,
+	DATE_FORMAT(Date_Vente,'%M') AS mois_de_vente_2021,
+	COUNT(ventes_samsung.Quantite_Vendue) AS nombre_de_ventes,
+	SUM(ventes_samsung.Quantite_Vendue) AS quantite_totale_vendue,
+	SUM(ventes_samsung.Montant_Total) AS montant_total_ventes,
+	ROUND(AVG(ventes_samsung.Delai_Livraison_Jours),2) AS moyenne__delai_livraison,
+    MONTH(Date_Vente) AS numero_du_mois
+FROM
+	ventes_samsung
+LEFT JOIN produits_samsung ON  ventes_samsung.ID_Produit = produits_samsung.ID_Produit
+WHERE YEAR(Date_Vente) = 2021
+GROUP BY 
+	produits_samsung.Gamme,
+    mois_de_vente_2021,
+    numero_du_mois
+ORDER BY
+	numero_du_mois ASC;
+
+/****exercice 20 : analyse du comportement client****/
+
+SELECT COUNT(DISTINCT clients_samsung.ID_Client) AS nombre_clients_uniques,
+	clients_samsung.Canal_Prefere,
+    clients_samsung.Preference_Produit,
+    ROUND(AVG(clients_samsung.Score_Fidelite),2) AS moyenne_fidelite,
+    SUM(ventes_samsung.Montant_Total) AS montant_total_depensé,
+	CASE
+		WHEN ROUND(AVG(clients_samsung.Score_Fidelite),2) > 6 AND SUM(ventes_samsung.Montant_Total) > 200000 THEN 'vip'
+        ELSE 'standard'
+	END AS classification_client 
+FROM
+	clients_samsung
+LEFT JOIN ventes_samsung ON clients_samsung.ID_Client = ventes_samsung.ID_Client
+WHERE 
+	Date_Inscription > 2018-01-01
+GROUP BY
+	clients_samsung.Canal_Prefere,
+    clients_samsung.Preference_Produit
+ORDER BY
+	nombre_clients_uniques;
+    
